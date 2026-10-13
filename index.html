@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ireland Renewal Tracker</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--tx:#1b2a22;--mut:#5d6b63;--ac:#0b7a4b;--bd:#dde3dc;--warn:#b25e00;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121815;--card:#1c2520;--tx:#e8efe9;--mut:#9aaa9f;--ac:#4cc58a;--bd:#2e3b34;--warn:#f0a24a}}
+:root[data-theme="dark"]{--bg:#121815;--card:#1c2520;--tx:#e8efe9;--mut:#9aaa9f;--ac:#4cc58a;--bd:#2e3b34;--warn:#f0a24a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.4rem;margin:0 0 4px}.sub{color:var(--mut);font-size:.9rem;margin:0 0 16px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:10px 0 4px}
+select,input[type=date]{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+.big{font-size:1.7rem;font-weight:700;color:var(--ac);margin:4px 0}.row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--bd);font-size:.92rem}.row:last-child{border:0}
+.note{font-size:.82rem;color:var(--mut)}.warn{color:var(--warn)}
+details summary{cursor:pointer;font-weight:600}.ed{display:grid;grid-template-columns:1fr 150px;gap:6px;align-items:center;margin-top:8px;font-size:.88rem}
+.ed input{padding:6px}a{color:var(--ac)}button.s{margin-top:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer}
+</style></head><body><main>
+<h1>🇮🇪 Renewal Processing Tracker</h1>
+<p class="sub">Pick your application date and category to see an estimated approval date.</p>
+<div class="tabs"><button id="t1" class="on">IRP / Stamp renewal (ISD)</button><button id="t2">Employment permit (DETE)</button></div>
+
+<div class="card">
+  <label for="cat" id="catl">Stamp category</label><select id="cat"></select>
+  <label for="app">Application submitted on</label><input type="date" id="app">
+</div>
+<div class="card" id="res"></div>
+
+<div class="card">
+  <div class="row"><span>Source dates last checked</span><b id="chk"></b></div>
+  <p class="note" id="srcs"></p>
+  <p class="note warn">Dates refresh automatically each morning from the official pages.</p>
+  <details><summary>Edit queue dates manually</summary><div id="ed"></div><button class="s" id="reset">Reset to snapshot</button></details>
+</div>
+<p class="note">Estimate = your submission date + the current backlog gap (official "now processing" date vs. date published). It assumes the queue keeps moving at today's pace; ISD says dates update weekly and some earlier applications may still be pending. Not official advice.</p>
+</main>
+<script>
+const SNAP={checked:"2026-10-12",
+isd:{label:"Stamp category",url:"https://www.irishimmigration.ie/registering-your-immigration-permission/how-to-renew-your-current-permission/renewing-your-registration-permission-if-you-live-in-the-republic-of-ireland/",
+ pub:"2026-10-12",card:true,items:[["Stamp 1, 1H","2026-08-18"],["Stamp 1G","2026-08-19"],["Stamp 2, 2A, 1A","2026-08-20"],["Stamp 4","2026-09-03"],["All other categories","2026-09-08"]]},
+dete:{label:"Permit application type",url:"https://enterprise.gov.ie/en/what-we-do/workplace-and-skills/employment-permits/current-application-processing-dates/",
+ pub:"2026-10-12",card:false,items:[["Renewal (all renewable permit types)","2026-07-21"],["Critical Skills (new)","2026-10-06"],["General Employment Permit (new)","2026-09-04"],["Other new (excl. CSEP, GEP, ICT)","2026-08-19"],["Intra-Company Transfer (new)","2026-10-12"],["Intra-Company Transfer (renewal)","2026-07-21"],["Review / Appeal","2026-04-28"]]}};
+let tab="isd",data=JSON.parse(JSON.stringify(SNAP));
+
+const $=id=>document.getElementById(id);
+const D=s=>new Date(s+"T00:00:00");const days=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const iso=d=>d.toISOString().slice(0,10);
+const fmt=s=>D(typeof s==="string"?s:iso(s)).toLocaleDateString("en-IE",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+const addDays=(s,n)=>{const d=D(s);d.setDate(d.getDate()+n);return iso(d)};
+function addBiz(s,n){const d=D(s);while(n>0){d.setDate(d.getDate()+1);const w=d.getDay();if(w&&w<6)n--}return iso(d)}
+const todayS=()=>{const d=new Date();return iso(new Date(d.getTime()-d.getTimezoneOffset()*6e4))};
+function fill(){const g=data[tab];$("catl").textContent=g.label;$("cat").innerHTML=g.items.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join("");render();
+ $("srcs").innerHTML=`Sources: <a href="${data.isd.url}" target="_blank" rel="noopener">ISD renewals page</a> · <a href="${data.dete.url}" target="_blank" rel="noopener">DETE processing dates</a>`;
+ $("chk").textContent=fmt(data.checked);
+ $("ed").innerHTML=g.items.map((x,i)=>`<div class="ed"><span>${x[0]}</span><input type="date" data-i="${i}" value="${x[1]}"></div>`).join("");
+ $("ed").querySelectorAll("input").forEach(el=>el.onchange=()=>{data[tab].items[el.dataset.i][1]=el.value;data.manual=true;try{localStorage.setItem("irp-dates",JSON.stringify(data))}catch(e){}render()})}
+function render(){const g=data[tab],it=g.items[+$("cat").value],q=it[1],app=$("app").value,r=$("res");
+ const lag=Math.max(0,days(q,g.pub));
+ let h=`<div class="row"><span>Now processing applications from</span><b>${fmt(q)}</b></div><div class="row"><span>Current backlog gap</span><b>${lag} days</b></div>`;
+ if(!app){r.innerHTML=h+`<p class="note">Choose your application date above.</p>`;return}
+ const t=todayS();
+ if(app<=q){r.innerHTML=`<p class="note">Estimated decision</p><div class="big">Being processed now</div><p>Your date is on or before the date being worked on, so a decision could come any day (it may already be in progress).</p>`+h+(g.card?`<div class="row"><span>Card by post</span><b>up to 15 business days after approval</b></div>`:"");return}
+ let est=addDays(app,lag);if(est<t)est=t;
+ h=`<p class="note">Estimated approval</p><div class="big">${fmt(est)}</div><p class="note">About ${Math.max(0,days(t,est))} days from today · ${days(app,est)} days after you applied</p>`+h;
+ h+=`<div class="row"><span>Days ahead of queue front</span><b>${days(q,app)} days</b></div>`;
+ if(g.card)h+=`<div class="row"><span>New IRP card arrives by</span><b>${fmt(addBiz(est,15))}</b></div>`;
+ r.innerHTML=h}
+$("cat").onchange=render;$("app").onchange=render;
+function tabTo(t){tab=t;$("t1").classList.toggle("on",t==="isd");$("t2").classList.toggle("on",t==="dete");fill()}
+$("t1").onclick=()=>tabTo("isd");$("t2").onclick=()=>tabTo("dete");
+$("reset").onclick=()=>{data=JSON.parse(JSON.stringify(SNAP));try{localStorage.removeItem("irp-dates")}catch(e){}fill()};
+fill();
+fetch("dates.json",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+ data.checked=j.checked;
+ for(const k of ["isd","dete"]){data[k].pub=j[k].pub;j[k].items.forEach((d,i)=>data[k].items[i][1]=d)}
+ data.manual=false;fill()}).catch(()=>{});
+</script></body></html>
