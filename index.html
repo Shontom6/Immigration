@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ireland renewal tracker</title>
+<style>
+:root{--bg:#eef2f6;--panel:#fff;--ink:#14263a;--mut:#5b6b7c;--line:#d5dde6;--stamp:#3a3fa6;--stampbg:#e8e9fa;--you:#c77d00;--ok:#13795b;
+--serif:Georgia,"Iowan Old Style","Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a27;--panel:#162536;--ink:#e6edf5;--mut:#92a3b5;--line:#2a3d52;--stamp:#9ea3ff;--stampbg:#232b57;--you:#f2b134;--ok:#4fd1a5}}
+:root[data-theme="dark"]{--bg:#0e1a27;--panel:#162536;--ink:#e6edf5;--mut:#92a3b5;--line:#2a3d52;--stamp:#9ea3ff;--stampbg:#232b57;--you:#f2b134;--ok:#4fd1a5}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans)}
+main{max-width:680px;margin:0 auto;padding:28px 16px 48px}
+h1{font:700 2rem/1.15 var(--serif);margin:0 0 6px;letter-spacing:-.01em}
+.lede{color:var(--mut);margin:0 0 22px;max-width:46ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px}
+.seg button{padding:11px 8px;border:0;background:transparent;color:var(--mut);font:600 .95rem var(--sans);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--stamp);color:#fff}
+@media (prefers-color-scheme:dark){.seg button[aria-pressed=true]{color:#0e1a27}}
+:root[data-theme="dark"] .seg button[aria-pressed=true]{color:#0e1a27}
+fieldset{border:0;padding:0;margin:0 0 16px}legend,label.l{font-weight:600;font-size:.9rem;margin-bottom:8px;display:block;padding:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:.92rem;cursor:pointer}
+.chips button[aria-pressed=true]{border-color:var(--stamp);background:var(--stampbg);color:var(--stamp);font-weight:600}
+input[type=date]{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+#out{margin-top:16px}
+.est{font:700 clamp(1.8rem,7vw,2.5rem)/1.1 var(--serif);margin:2px 0 4px}
+.k{color:var(--mut);font-size:.85rem}.sub{color:var(--mut);margin:0 0 6px}
+.track{position:relative;height:96px;margin:14px 36px 4px}
+.line{position:absolute;left:0;right:0;top:46px;height:4px;border-radius:2px;background:var(--line)}
+.wait{position:absolute;top:46px;height:4px;border-radius:2px;background:var(--stamp)}
+.pin{position:absolute;transform:translateX(-50%);text-align:center;font-size:.76rem;line-height:1.25;white-space:nowrap;color:var(--mut)}
+.pin b{display:block;color:var(--ink);font-size:.8rem}
+.pin i{position:absolute;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--panel);border:3px solid var(--stamp)}
+.pin.top{top:0}.pin.top i{top:40px}.pin.bot{top:62px}.pin.bot i{top:-22px}
+.pin.you i{border-color:var(--you)}.pin.est i{background:var(--ok);border-color:var(--ok)}.pin.now i{border-color:var(--mut)}
+dl{margin:14px 0 0;border-top:1px solid var(--line)}dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+dt{color:var(--mut)}dd{margin:0;font-weight:600;text-align:right}
+.fine{font-size:.82rem;color:var(--mut);margin:18px 2px 0}.fine a{color:var(--stamp)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--stampbg);color:var(--stamp);font-size:.8rem;font-weight:600}
+</style></head><body><main>
+<h1>Where is my renewal in the queue?</h1>
+<p class="lede">Choose your application type and the day you applied. The tracker estimates when it will be approved, using the dates the Irish government publishes.</p>
+
+<div class="panel">
+  <div class="seg" role="group" aria-label="Service">
+    <button id="t-isd" aria-pressed="true">IRP renewal (ISD)</button>
+    <button id="t-dete" aria-pressed="false">Employment permit (DETE)</button>
+  </div>
+  <fieldset><legend id="cl">Stamp category</legend><div class="chips" id="chips"></div></fieldset>
+  <label class="l" for="app">Date you applied</label><input type="date" id="app">
+  <div id="out"></div>
+</div>
+
+<p class="fine">Dates last checked <b id="chk"></b>. The tracker re-checks the official pages every few hours: <a href="https://www.irishimmigration.ie/registering-your-immigration-permission/how-to-renew-your-current-permission/renewing-your-registration-permission-if-you-live-in-the-republic-of-ireland/" target="_blank" rel="noopener">ISD renewals</a> and <a href="https://enterprise.gov.ie/en/what-we-do/workplace-and-skills/employment-permits/current-application-processing-dates/" target="_blank" rel="noopener">DETE processing dates</a>.</p>
+<p class="fine">The estimate adds today's backlog gap to your application date. It assumes the queue keeps its current pace, so it is a guide, not a promise.</p>
+</main>
+<script>
+const data={checked:"2026-10-12",
+isd:{label:"Stamp category",pub:"2026-10-12",card:true,items:[["Stamp 1, 1H","2026-08-18"],["Stamp 1G","2026-08-19"],["Stamp 2, 2A, 1A","2026-08-20"],["Stamp 4","2026-09-03"],["All other categories","2026-09-08"]]},
+dete:{label:"Application type",pub:"2026-10-12",card:false,items:[["Renewal (any permit)","2026-07-21"],["Critical Skills (new)","2026-10-06"],["General (new)","2026-09-04"],["Other new","2026-08-19"],["Intra-Company (new)","2026-10-12"],["Intra-Company (renewal)","2026-07-21"],["Review or appeal","2026-04-28"]]}};
+let tab="isd",sel=0;const $=id=>document.getElementById(id);
+const D=s=>new Date(s+"T00:00:00"),iso=d=>d.toISOString().slice(0,10);
+const days=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const fmt=(s,short)=>D(s).toLocaleDateString("en-IE",short?{day:"numeric",month:"short"}:{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+const add=(s,n)=>{const d=D(s);d.setDate(d.getDate()+n);return iso(d)};
+const biz=(s,n)=>{const d=D(s);while(n>0){d.setDate(d.getDate()+1);if(d.getDay()%6)n--}return iso(d)};
+const today=()=>{const d=new Date();return iso(new Date(d.getTime()-d.getTimezoneOffset()*6e4))};
+function chips(){const g=data[tab];$("cl").textContent=g.label;
+ $("chips").innerHTML=g.items.map((x,i)=>`<button aria-pressed="${i===sel}" data-i="${i}">${x[0]}</button>`).join("");
+ $("chips").querySelectorAll("button").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;chips();render()});
+ $("chk").textContent=fmt(data.checked)}
+function pin(cls,pos,label,date,pos2){return `<div class="pin ${cls} ${pos2}" style="left:${pos}%"><i></i><b>${label}</b>${fmt(date,1)}</div>`}
+function render(){const g=data[tab],q=g.items[sel][1],app=$("app").value,o=$("out"),t=today();
+ const lag=Math.max(0,days(q,g.pub));
+ if(!app){o.innerHTML=`<p class="sub">Pick your application date to see your estimate.</p><dl><div><dt>Currently processing applications from</dt><dd>${fmt(q)}</dd></div><div><dt>Backlog gap</dt><dd>${lag} days</dd></div></dl>`;return}
+ if(app<=q){o.innerHTML=`<span class="badge">In progress</span><div class="est">Being processed now</div><p class="sub">Your date is on or before the one being worked on, so a decision can come any day.</p>${g.card?`<dl><div><dt>New card by post</dt><dd>up to 15 business days after approval</dd></div></dl>`:""}`;return}
+ let est=add(app,lag);if(est<t)est=t;
+ const all=[q,app,est,t].sort(),lo=all[0],hi=all[3],span=Math.max(1,days(lo,hi)),P=s=>days(lo,s)/span*100;
+ o.innerHTML=`<p class="k">Estimated approval</p><div class="est">${fmt(est)}</div>
+ <p class="sub">${Math.max(0,days(t,est))} days from today, ${days(app,est)} days after you applied.</p>
+ <div class="track"><div class="line"></div><div class="wait" style="left:${P(app)}%;width:${P(est)-P(app)}%"></div>
+ ${pin("",P(q),"Queue front",q,"top")}${pin("now",P(t),"Today",t,"top")}${pin("you",P(app),"You applied",app,"bot")}${pin("est",P(est),"Estimate",est,"bot")}</div>
+ <dl><div><dt>Days behind the queue front</dt><dd>${days(q,app)}</dd></div>${g.card?`<div><dt>New IRP card by post, latest</dt><dd>${fmt(biz(est,15))}</dd></div>`:""}</dl>`}
+function setTab(t){tab=t;sel=0;$("t-isd").setAttribute("aria-pressed",t==="isd");$("t-dete").setAttribute("aria-pressed",t==="dete");chips();render()}
+$("t-isd").onclick=()=>setTab("isd");$("t-dete").onclick=()=>setTab("dete");$("app").onchange=render;
+chips();render();
+fetch("dates.json",{cache:"no-store"}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+ data.checked=j.checked;for(const k of ["isd","dete"]){data[k].pub=j[k].pub;j[k].items.forEach((d,i)=>data[k].items[i][1]=d)}
+ chips();render()}).catch(()=>{});
+</script></body></html>
